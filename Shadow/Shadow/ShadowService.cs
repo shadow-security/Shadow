@@ -167,7 +167,7 @@ namespace Shadow
                 handler(typeof(ShadowService), EventArgs.Empty);
         }
 
-        public static async Task<Boolean> sendSMS(string message)
+        public static async Task sendSMS(string message)
         {
             //send SMS
         }
