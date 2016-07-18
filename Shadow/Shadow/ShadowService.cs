@@ -19,8 +19,10 @@ namespace Shadow
 
 #if OFFLINE_SYNC_ENABLED
         private static IMobileServiceSyncTable<ShadowUser> ShadowUserTable;
+        private static IMobileServiceSyncTable<ShadowUserContact> ShadowUserContactTable;
 #else
         private static IMobileServiceTable<ShadowUser> ShadowUserTable;
+        private static IMobileServiceTable<ShadowUserContact> ShadowUserContactTable;
 #endif
 
         static ShadowService()
@@ -33,8 +35,10 @@ namespace Shadow
             Client.SyncContext.InitializeAsync(store);
 
             ShadowUserTable = Client.GetSyncTable<ShadowUser>();
+            ShadowUserContactTable = Client.GetSyncTable<ShadowUserContact>();
 #else
             ShadowUserTable = Client.GetTable<ShadowUser>();
+            ShadowUserContactTable = Client.GetTable<ShadowUserContact>();
 #endif
 
         }
@@ -56,11 +60,19 @@ namespace Shadow
 #endif
                 isAuthenticated = (authUser.UserId != String.Empty);
                 //if user is authenticated, fetch the corresponding user object
-                IMobileServiceTableQuery<ShadowUser> query = ShadowUserTable.Where(t => t.UserId == authUser.UserId);
-                var res = await query.ToListAsync();
-                if (res.Count > 0)
+                IMobileServiceTableQuery<ShadowUser> userquery = ShadowUserTable.Where(t => t.UserId == authUser.UserId);
+                var userres = await userquery.ToListAsync();
+                if (userres.Count > 0)
                 {
-                    user = res.Find(t => t.UserId == authUser.UserId);
+                    user = userres.Find(t => t.UserId == authUser.UserId);
+
+                    IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.Id == user.Id);
+                    var contactsres = await contactquery.ToListAsync();
+                    foreach (ShadowUserContact contact in contactsres)
+                    {
+                        user.addEmergencyContact(contact);
+                    }
+
                 }
                 //if none exists, create a new object
                 else
@@ -69,7 +81,7 @@ namespace Shadow
                     user.UserId = authUser.UserId;
                     await SaveTaskAsync(user);
                 }
-                
+                RaiseonAuthenticated();
                 return user;
             }
             catch (Exception ex)
@@ -105,27 +117,61 @@ namespace Shadow
             return await Authenticate(MobileServiceAuthenticationProvider.Facebook);
         }
 
-        public static ShadowUser CurrentUser()
+        public static ShadowUser CurrentUser
         {
-            if (isAuthenticated)
+           get
             {
-                return user;
+                if (isAuthenticated)
+                {
+                    return user;
+                }
+                else
+                {
+                    throw new System.InvalidOperationException("User not logged in");
+                }    
+                    
             }
-            throw new System.InvalidOperationException("User not logged in");
-
         }
 
         public static async Task SaveCurrentUser()
         {
-            if (CurrentUser().Id == null)
+            if (CurrentUser.Id == null)
             {
-                await ShadowUserTable.InsertAsync(CurrentUser());
+                await ShadowUserTable.InsertAsync(CurrentUser);
             }
             else
             {
-                await ShadowUserTable.UpdateAsync(CurrentUser());
+                foreach (ShadowUserContact contact in CurrentUser.EmergencyContacts)
+                {
+                    if (contact.Id == null)
+                    {
+                        await ShadowUserContactTable.InsertAsync(contact);
+                    }
+                    else
+                    {
+                        await ShadowUserContactTable.UpdateAsync(contact);
+                    }
+                }
+                await ShadowUserTable.UpdateAsync(CurrentUser);
             }
+
         }
+
+
+        public static event EventHandler onAuthenticated;
+
+        private static void RaiseonAuthenticated()
+        {
+            var handler = onAuthenticated;
+            if (handler != null)
+                handler(typeof(ShadowService), EventArgs.Empty);
+        }
+
+        public static async Task<Boolean> sendSMS(string message)
+        {
+            //send SMS
+        }
+
 
 
     }

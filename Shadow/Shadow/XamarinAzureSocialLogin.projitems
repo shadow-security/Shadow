@@ -12,7 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)App.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ShadowService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LoginResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ShadowUser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ShadowUserContact.cs" />
   </ItemGroup>
 </Project>

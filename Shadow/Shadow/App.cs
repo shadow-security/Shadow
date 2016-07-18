@@ -11,15 +11,6 @@ namespace Shadow
 	{
 		public App ()
 		{
-            /* Usage */
-            //btnGoogle.Clicked += async (sender, args) =>
-            //{
-            //    var user = await Login.AuthenticateGoogle();
-            //    welcomeLabel.Text = string.Format("Welcome {0}!", user.Message.Email);
-            //};
-
-           
-            
             MainPage = new ContentPage
             {
 

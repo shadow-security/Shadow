@@ -22,13 +22,24 @@ namespace Shadow.Droid
             LoadApplication(new Shadow.App());
 
             ShadowService.AuthenticateFacebook();
+            ShadowService.onAuthenticated += loginHandler;
 
             //var task = Task.Run(async () => { await ShadowService.AuthenticateFacebook(); });
             //task.Wait();
 
-            //ShadowService.CurrentUser().lastName = "Bloemhof";
-            //ShadowService.SaveCurrentUser();
         }
+
+        public void loginHandler(object sender, EventArgs args)
+        {
+            ShadowService.CurrentUser.lastName = "Bloemhof";
+            ShadowUserContact contact = new ShadowUserContact();
+            contact.firstName = "Jan";
+            contact.lastName = "Botha";
+            contact.phoneNo = "0828213175";
+            ShadowService.CurrentUser.addEmergencyContact(contact);
+            ShadowService.SaveCurrentUser();
+        }
+
     }
 }
 

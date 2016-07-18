@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Shadow
 {
@@ -13,6 +15,7 @@ namespace Shadow
         string medicalproviderphoneno;
         string securityprovider;
         string securityproviderphoneno;
+        List<ShadowUserContact> emergencycontacts = new List<ShadowUserContact>();
 
 
         public string Id { get; set; }
@@ -78,6 +81,16 @@ namespace Shadow
         {
             get { return securityproviderphoneno; }
             set { securityproviderphoneno = value; }
+        }
+
+        public List<ShadowUserContact> EmergencyContacts
+        {
+            get { return emergencycontacts; }
+        }
+
+        public void addEmergencyContact(ShadowUserContact emergencyContact)
+        {
+            emergencycontacts.Add(emergencyContact);
         }
 
     }
