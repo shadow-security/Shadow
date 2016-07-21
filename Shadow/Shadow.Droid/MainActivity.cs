@@ -37,6 +37,7 @@ namespace Shadow.Droid
             contact.lastName = "Botha";
             contact.phoneNo = "0828213175";
             ShadowService.CurrentUser.addEmergencyContact(contact);
+            ShadowService.Addlog(0, "added contact", "user contact");
             ShadowService.SaveCurrentUser();
         }
 

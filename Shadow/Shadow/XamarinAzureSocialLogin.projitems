@@ -11,8 +11,9 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)App.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\ShadowAudit.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\ShadowUser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\ShadowUserContact.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ShadowService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ShadowUser.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ShadowUserContact.cs" />
   </ItemGroup>
 </Project>

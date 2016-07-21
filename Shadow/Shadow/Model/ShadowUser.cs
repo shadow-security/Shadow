@@ -17,7 +17,6 @@ namespace Shadow
         string securityproviderphoneno;
         List<ShadowUserContact> emergencycontacts = new List<ShadowUserContact>();
 
-
         public string Id { get; set; }
         
         [JsonProperty(PropertyName = "UserId")]
@@ -90,6 +89,7 @@ namespace Shadow
 
         public void addEmergencyContact(ShadowUserContact emergencyContact)
         {
+            emergencyContact.UserId = UserId;
             emergencycontacts.Add(emergencyContact);
         }
 

@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define OFFLINE_SYNC_ENABLED
+
+using System;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.MobileServices;
 using System.Net.Http;
@@ -6,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.WindowsAzure.MobileServices.SQLiteStore;
 using Microsoft.WindowsAzure.MobileServices.Sync;
-//#define OFFLINE_SYNC_ENABLED
+
 
 
 namespace Shadow
@@ -20,9 +22,11 @@ namespace Shadow
 #if OFFLINE_SYNC_ENABLED
         private static IMobileServiceSyncTable<ShadowUser> ShadowUserTable;
         private static IMobileServiceSyncTable<ShadowUserContact> ShadowUserContactTable;
+        private static IMobileServiceSyncTable<Audit> ShadowAuditTable;
 #else
         private static IMobileServiceTable<ShadowUser> ShadowUserTable;
         private static IMobileServiceTable<ShadowUserContact> ShadowUserContactTable;
+        private static IMobileServiceTable<Audit> ShadowAuditTable;
 #endif
 
         static ShadowService()
@@ -36,9 +40,11 @@ namespace Shadow
 
             ShadowUserTable = Client.GetSyncTable<ShadowUser>();
             ShadowUserContactTable = Client.GetSyncTable<ShadowUserContact>();
+            ShadowAuditTable = Client.GetSyncTable<Audit>();
 #else
             ShadowUserTable = Client.GetTable<ShadowUser>();
             ShadowUserContactTable = Client.GetTable<ShadowUserContact>();
+            ShadowAuditTable = Client.GetTable<Audit>();
 #endif
 
         }
@@ -66,7 +72,7 @@ namespace Shadow
                 {
                     user = userres.Find(t => t.UserId == authUser.UserId);
 
-                    IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.Id == user.Id);
+                    IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.UserId == user.UserId);
                     var contactsres = await contactquery.ToListAsync();
                     foreach (ShadowUserContact contact in contactsres)
                     {
@@ -81,7 +87,7 @@ namespace Shadow
                     user.UserId = authUser.UserId;
                     await SaveTaskAsync(user);
                 }
-                RaiseonAuthenticated();
+                RaiseOnAuthenticated();
                 return user;
             }
             catch (Exception ex)
@@ -149,28 +155,99 @@ namespace Shadow
                     }
                     else
                     {
-                        await ShadowUserContactTable.UpdateAsync(contact);
+                        if (contact.deleted)
+                        { 
+                            await ShadowUserContactTable.DeleteAsync(contact);
+                        }
+                        else {
+                            await ShadowUserContactTable.UpdateAsync(contact);
+                        }
+                        
                     }
                 }
                 await ShadowUserTable.UpdateAsync(CurrentUser);
             }
 
         }
+        
+        public static async Task<Boolean> sendSMS(string phoneno, string message)
+        {
+            Boolean Delivered = false;
+            try
+            {
+                //Delivered = await SendSMS
+                if (Delivered)
+                {
+                    await ShadowService.Addlog(0, "Delivery to ["+phoneno+"] succeeded", "SMS");
+                    RaiseOnSMSDelivered(phoneno);
+                    return true;
+                }
+                else
+                {
+                    await ShadowService.Addlog(-1, "Delivery to [" + phoneno + "] failed", "SMS");
+                    RaiseonSMSFailed(phoneno);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ShadowService.Addlog(-2, "Delivery to [" + phoneno + "] failed", "SMS");
+                RaiseonSMSFailed(phoneno);
+                return false;
+            }
 
 
+
+        }
+
+        public static async Task Addlog(int eventstatus, string eventdescription, string eventtype)
+        {
+            Audit logentry = new Audit();
+
+            logentry.eventStatus = eventstatus;
+            logentry.eventDescription = eventdescription;
+            logentry.eventType = eventtype;
+            logentry.timeStamp = DateTime.Now.ToUniversalTime();
+
+            await ShadowAuditTable.InsertAsync(logentry);
+        }
+
+#if OFFLINE_SYNC_ENABLED
+        public static async Task SyncData()
+        {
+            await Client.SyncContext.PushAsync();
+        }
+#endif        
+
+        /*Event handlers*/
         public static event EventHandler onAuthenticated;
 
-        private static void RaiseonAuthenticated()
+        public static event EventHandler onSMSDelivered;
+
+        public static event EventHandler onSMSFailed;
+
+        private static void RaiseOnAuthenticated()
         {
             var handler = onAuthenticated;
             if (handler != null)
                 handler(typeof(ShadowService), EventArgs.Empty);
         }
 
-        public static async Task sendSMS(string message)
+        private static void RaiseOnSMSDelivered(string phoneno)
         {
-            //send SMS
+            var handler = onSMSDelivered;
+            if (handler != null)
+                handler(typeof(ShadowService), EventArgs.Empty);
         }
+
+        private static void RaiseonSMSFailed(string phoneno)
+        {
+            var handler = onSMSFailed;
+            if (handler != null)
+                handler(typeof(ShadowService), EventArgs.Empty);
+        }
+
+        
 
 
 
