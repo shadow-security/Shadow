@@ -11,6 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shadow.iOS", "Shadow\Shadow
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shadow\Shadow\XamarinAzureSocialLogin.projitems*{dae9aa2f-ad3a-4a08-a32d-69b55a6262e0}*SharedItemsImports = 4
 		Shadow\Shadow\XamarinAzureSocialLogin.projitems*{e0253f4c-5f73-4817-896d-d3ab1b42a31f}*SharedItemsImports = 4
 		Shadow\Shadow\XamarinAzureSocialLogin.projitems*{f8e690b8-269f-4e37-baaf-51ea591397b5}*SharedItemsImports = 13
 	EndGlobalSection

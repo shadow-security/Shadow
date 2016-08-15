@@ -39,6 +39,7 @@ namespace Shadow.Droid
             ShadowService.CurrentUser.addEmergencyContact(contact);
             ShadowService.Addlog(0, "added contact", "user contact");
             ShadowService.SaveCurrentUser();
+            ShadowService.SendSms("+27828213175", "Hello from SHADOW").Wait();
         }
 
     }

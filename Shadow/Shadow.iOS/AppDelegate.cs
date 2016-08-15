@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Shadow;
+
 
 using Foundation;
 using UIKit;
@@ -23,7 +25,7 @@ namespace Shadow.iOS
         public override bool FinishedLaunching(UIApplication app, NSDictionary options)
         {
             global::Xamarin.Forms.Forms.Init();
-            LoadApplication(new App());
+            LoadApplication(new Shadow.App());
 
             return base.FinishedLaunching(app, options);
         }

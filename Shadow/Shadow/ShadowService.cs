@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.WindowsAzure.MobileServices.SQLiteStore;
 using Microsoft.WindowsAzure.MobileServices.Sync;
-
-
+using Twilio;
+using Twilio.Clients;
+using Twilio.Creators.Api.V2010.Account;
+using Twilio.Types;
 
 namespace Shadow
 {
@@ -56,7 +58,7 @@ namespace Shadow
                 MobileServiceUser authUser;
                 isAuthenticated = false;
 #if __IOS__
-                authUser = return await Client.LoginAsync(UIKit.UIApplication.SharedApplication.KeyWindow.RootViewController, provider);
+                authUser = await Client.LoginAsync(UIKit.UIApplication.SharedApplication.KeyWindow.RootViewController, provider);
 #elif WINDOWS_PHONE
                 authUser = return await Client.LoginAsync(provider);
 #else
@@ -175,7 +177,7 @@ namespace Shadow
             Boolean Delivered = false;
             try
             {
-                //Delivered = await SendSMS
+                Delivered = await SendSms(phoneno, message);
                 if (Delivered)
                 {
                     await ShadowService.Addlog(0, "Delivery to ["+phoneno+"] succeeded", "SMS");
@@ -247,8 +249,31 @@ namespace Shadow
                 handler(typeof(ShadowService), EventArgs.Empty);
         }
 
-        
 
+        public static async Task<Boolean> SendSms(string phoneno, string smsMessage)
+        {
+            //method 1 - RouteSMS
+            return RouteSMS.SendSMS(phoneno, smsMessage);
+
+            //method 2 - Twilio
+            //var accountSid = "ACffd7aeddc478c222a68b1ac151662c7b"; // Your Account SID from twilio.com/console
+            //var authToken = "3c3c7dbf39ec3b28a116d06f69d4aa60";   // Your Auth Token from twilio.com/console
+
+            //TwilioClient.Init(accountSid, authToken);
+            //var twilio = new TwilioRestClient(accountSid, authToken);
+            //PhoneNumber toNum = new PhoneNumber(phoneno);
+            //    //"++27828213175"
+
+            //var message = await
+            //  new MessageCreator(
+            //    accountSid,
+            //    toNum,  // To number
+            //    new PhoneNumber("+14129619401"),  // Twilio From number +14129619401
+            //    smsMessage
+            //  ).ExecuteAsync(twilio);
+            // Console.WriteLine("Message sent");
+            //return true;
+        }
 
 
     }
