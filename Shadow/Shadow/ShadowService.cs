@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.MobileServices;
 using System.Net.Http;
+using System.Web;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.WindowsAzure.MobileServices.SQLiteStore;
@@ -12,6 +13,7 @@ using Twilio;
 using Twilio.Clients;
 using Twilio.Creators.Api.V2010.Account;
 using Twilio.Types;
+using System.Net;
 
 namespace Shadow
 {
@@ -20,6 +22,8 @@ namespace Shadow
         private static ShadowUser user;
         private static Boolean isAuthenticated;
         private static readonly MobileServiceClient Client = new MobileServiceClient(Constants.ApplicationURL);
+        private static HttpClient client;
+
 
 #if OFFLINE_SYNC_ENABLED
         private static IMobileServiceSyncTable<ShadowUser> ShadowUserTable;
@@ -48,7 +52,8 @@ namespace Shadow
             ShadowUserContactTable = Client.GetTable<ShadowUserContact>();
             ShadowAuditTable = Client.GetTable<Audit>();
 #endif
-
+            client = new HttpClient();
+            client.MaxResponseContentBufferSize = 256000;
         }
 
         private static async Task<ShadowUser> Authenticate(MobileServiceAuthenticationProvider provider)
@@ -210,6 +215,7 @@ namespace Shadow
             logentry.eventDescription = eventdescription;
             logentry.eventType = eventtype;
             logentry.timeStamp = DateTime.Now.ToUniversalTime();
+            logentry.UserId = user.UserId;
 
             await ShadowAuditTable.InsertAsync(logentry);
         }
@@ -275,6 +281,43 @@ namespace Shadow
             //return true;
         }
 
+        public static async Task<Boolean> RegisterAccount()
+        {
 
+            //var values = HttpUtility.ParseQueryString(string.Empty);
+            //values["email"] = "marius@bloemhofs.co.za";
+            //values["password"] = "12345674890";
+            //StringContent queryString = new StringContent(values.ToString());
+
+
+            var values = new Dictionary<string, string>();
+            values.Add("email", "marius@bloemhofs.co.za");
+            values.Add("password", "12345674890");
+            var content = new FormUrlEncodedContent(values);
+
+
+            try
+            {
+                //var httpResponseMessage = await client.PostAsync(Constants.RegisterURL, content);
+                var uri = new Uri(string.Format(Constants.RegisterURL, content.ToString()));
+                var httpResponseMessage = await client.GetAsync("https://test-shadow-mobapp.azurewebsites.net/api/register?password=sdfSD FASD SDfSDf&email=marius@bloemhofs.co.za&dob=sdfsdfsdf").ConfigureAwait(continueOnCapturedContext: false);
+
+                if (httpResponseMessage.StatusCode == HttpStatusCode.OK)
+                {
+                    var responseContent = await httpResponseMessage.Content.ReadAsStringAsync();
+                }
+            }
+            catch (OperationCanceledException) { }
+
+        //    var uri = new Uri(string.Format(Constants.RegisterURL, String.Empty));
+        //    var response = await client.PostAsync(uri, queryString);
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        var responseContent = await response.Content.ReadAsStringAsync();
+        ////        Items = JsonConvert.DeserializeObject<List<TodoItem>>(content);
+        //    }
+            return true;
+
+        }
     }
 }

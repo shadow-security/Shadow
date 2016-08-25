@@ -156,6 +156,10 @@
       <HintPath>..\..\packages\Twilio.5.0.0-rc4\lib\netstandard1.4\Twilio.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Twilio.Common.iOS, Version=1.0.5941.41158, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Twilio.Common.Xamarin.0.3.1\lib\Xamarin.iOS10\Twilio.Common.iOS.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Xamarin.Forms.Core, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Xamarin.Forms.2.0.0.6482\lib\Xamarin.iOS10\Xamarin.Forms.Core.dll</HintPath>
       <Private>True</Private>
