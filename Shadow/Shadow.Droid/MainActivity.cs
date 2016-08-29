@@ -23,7 +23,7 @@ namespace Shadow.Droid
 
             ShadowService.AuthenticateFacebook();
             ShadowService.onAuthenticated += loginHandler;
-
+            
             //var task = Task.Run(async () => { await ShadowService.AuthenticateFacebook(); });
             //task.Wait();
 
@@ -31,7 +31,7 @@ namespace Shadow.Droid
 
         public void loginHandler(object sender, EventArgs args)
         {
-            ShadowService.RegisterAccount();
+            ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123");
             ShadowService.CurrentUser.lastName = "Bloemhof";
             ShadowUserContact contact = new ShadowUserContact();
             contact.firstName = "Jan";
@@ -40,7 +40,7 @@ namespace Shadow.Droid
             ShadowService.CurrentUser.addEmergencyContact(contact);
             ShadowService.Addlog(0, "added contact", "user contact");
             ShadowService.SaveCurrentUser();
-            ShadowService.sendSMS("+27828213175", "Hello from SHADOW").Wait();
+            //ShadowService.sendSMS("+27828213175", "Hello from SHADOW").Wait();
             
         }
 

@@ -3,17 +3,11 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.MobileServices;
-using System.Net.Http;
-using System.Web;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using Microsoft.WindowsAzure.MobileServices.SQLiteStore;
-using Microsoft.WindowsAzure.MobileServices.Sync;
-using Twilio;
-using Twilio.Clients;
-using Twilio.Creators.Api.V2010.Account;
-using Twilio.Types;
-using System.Net;
+using System.Text;
+using System.Collections.Specialized;
+using System.Net.Http;
+using System.Linq;
 
 namespace Shadow
 {
@@ -68,7 +62,7 @@ namespace Shadow
                 authUser = return await Client.LoginAsync(provider);
 #else
                 authUser = await Client.LoginAsync(
-                    Xamarin.Forms.Forms.Context, 
+                    Xamarin.Forms.Forms.Context,
                     provider);
 #endif
                 isAuthenticated = (authUser.UserId != String.Empty);
@@ -132,7 +126,7 @@ namespace Shadow
 
         public static ShadowUser CurrentUser
         {
-           get
+            get
             {
                 if (isAuthenticated)
                 {
@@ -141,8 +135,8 @@ namespace Shadow
                 else
                 {
                     throw new System.InvalidOperationException("User not logged in");
-                }    
-                    
+                }
+
             }
         }
 
@@ -163,20 +157,21 @@ namespace Shadow
                     else
                     {
                         if (contact.deleted)
-                        { 
+                        {
                             await ShadowUserContactTable.DeleteAsync(contact);
                         }
-                        else {
+                        else
+                        {
                             await ShadowUserContactTable.UpdateAsync(contact);
                         }
-                        
+
                     }
                 }
                 await ShadowUserTable.UpdateAsync(CurrentUser);
             }
 
         }
-        
+
         public static async Task<Boolean> sendSMS(string phoneno, string message)
         {
             Boolean Delivered = false;
@@ -185,7 +180,7 @@ namespace Shadow
                 Delivered = await SendSms(phoneno, message);
                 if (Delivered)
                 {
-                    await ShadowService.Addlog(0, "Delivery to ["+phoneno+"] succeeded", "SMS");
+                    await ShadowService.Addlog(0, "Delivery to [" + phoneno + "] succeeded", "SMS");
                     RaiseOnSMSDelivered(phoneno);
                     return true;
                 }
@@ -255,7 +250,6 @@ namespace Shadow
                 handler(typeof(ShadowService), EventArgs.Empty);
         }
 
-
         public static async Task<Boolean> SendSms(string phoneno, string smsMessage)
         {
             //method 1 - RouteSMS
@@ -281,43 +275,76 @@ namespace Shadow
             //return true;
         }
 
-        public static async Task<Boolean> RegisterAccount()
+        public static async Task<AccountResult> RegisterAccount(string email, string password)
         {
+            var queryParams = new NameValueCollection()
+            {
+                { "email", email },
+                { "password", password }
+            };
 
-            //var values = HttpUtility.ParseQueryString(string.Empty);
-            //values["email"] = "marius@bloemhofs.co.za";
-            //values["password"] = "12345674890";
-            //StringContent queryString = new StringContent(values.ToString());
-
-
-            var values = new Dictionary<string, string>();
-            values.Add("email", "marius@bloemhofs.co.za");
-            values.Add("password", "12345674890");
-            var content = new FormUrlEncodedContent(values);
-
+            var url = ToQueryString(Constants.RegisterURL, queryParams);
 
             try
             {
-                //var httpResponseMessage = await client.PostAsync(Constants.RegisterURL, content);
-                var uri = new Uri(string.Format(Constants.RegisterURL, content.ToString()));
-                var httpResponseMessage = await client.GetAsync("https://test-shadow-mobapp.azurewebsites.net/api/register?password=sdfSD FASD SDfSDf&email=marius@bloemhofs.co.za&dob=sdfsdfsdf").ConfigureAwait(continueOnCapturedContext: false);
-
-                if (httpResponseMessage.StatusCode == HttpStatusCode.OK)
+                var httpResponseMessage = await client.GetAsync(url).ConfigureAwait(continueOnCapturedContext: false);
+                if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK ||
+                    httpResponseMessage.StatusCode == System.Net.HttpStatusCode.Created)
                 {
                     var responseContent = await httpResponseMessage.Content.ReadAsStringAsync();
+                    responseContent = responseContent.Replace("\"", string.Empty);
+                    responseContent = responseContent.Replace("{", string.Empty);
+                    responseContent = responseContent.Replace("}", string.Empty);
+                    Dictionary<string, string> response = responseContent.Split(',')
+                                .Select(x => x.Split(':'))
+                                .ToDictionary(x => x[0], x => x[1]);
+                    if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        int errorcode = Int32.Parse(response["code"]);
+                        return (AccountResult)errorcode;
+                    } else
+                    {
+                        return AccountResult.accountCreated;
+                    }
+                         
                 }
             }
             catch (OperationCanceledException) { }
 
-        //    var uri = new Uri(string.Format(Constants.RegisterURL, String.Empty));
-        //    var response = await client.PostAsync(uri, queryString);
-        //    if (response.IsSuccessStatusCode)
-        //    {
-        //        var responseContent = await response.Content.ReadAsStringAsync();
-        ////        Items = JsonConvert.DeserializeObject<List<TodoItem>>(content);
-        //    }
-            return true;
+            return AccountResult.error;
 
         }
+
+        public static string ToQueryString(string url, NameValueCollection nvc)
+        {
+            StringBuilder sb;
+
+            if (url.Contains("?"))
+                sb = new StringBuilder("&");
+            else
+                sb = new StringBuilder("?");
+
+            bool first = true;
+
+            foreach (string key in nvc.AllKeys)
+            {
+                foreach (string value in nvc.GetValues(key))
+                {
+                    if (!first)
+                    {
+                        sb.Append("&");
+                    }
+
+                    sb.AppendFormat("{0}={1}", Uri.EscapeDataString(key), Uri.EscapeDataString(value));
+
+                    first = false;
+                }
+            }
+
+            return url + sb.ToString();
+        }
+
+
     }
+
 }
