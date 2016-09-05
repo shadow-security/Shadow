@@ -8,11 +8,16 @@ using System.Text;
 using System.Collections.Specialized;
 using System.Net.Http;
 using System.Linq;
+using Microsoft.WindowsAzure.MobileServices.Sync;
+using UIKit;
+using Shadow.Model;
 
 namespace Shadow
 {
     public static class ShadowService
     {
+        public delegate void ErrorEventHandler(object sender, ErrorEventArgs e);
+
         private static ShadowUser user;
         private static Boolean isAuthenticated;
         private static readonly MobileServiceClient Client = new MobileServiceClient(Constants.ApplicationURL);
@@ -67,33 +72,48 @@ namespace Shadow
 #endif
                 isAuthenticated = (authUser.UserId != String.Empty);
                 //if user is authenticated, fetch the corresponding user object
-                IMobileServiceTableQuery<ShadowUser> userquery = ShadowUserTable.Where(t => t.UserId == authUser.UserId);
-                var userres = await userquery.ToListAsync();
-                if (userres.Count > 0)
-                {
-                    user = userres.Find(t => t.UserId == authUser.UserId);
 
-                    IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.UserId == user.UserId);
-                    var contactsres = await contactquery.ToListAsync();
-                    foreach (ShadowUserContact contact in contactsres)
-                    {
-                        user.addEmergencyContact(contact);
-                    }
-
-                }
-                //if none exists, create a new object
-                else
+                if (isAuthenticated == false)
                 {
-                    user = new ShadowUser();
-                    user.UserId = authUser.UserId;
-                    await SaveTaskAsync(user);
+                    RaiseOnAuthenticationFailed(AccountResult.socialLoginFailed);
+                    return null;
                 }
+
+                var res = await LoadUser(authUser.UserId);
                 RaiseOnAuthenticated();
                 return user;
             }
             catch (Exception ex)
             {
+                RaiseOnAuthenticationFailed(AccountResult.socialLoginFailed);
                 return null;
+            }
+        }
+
+        private static async Task<Boolean> LoadUser(string UserId)
+        {
+            IMobileServiceTableQuery<ShadowUser> userquery = ShadowUserTable.Where(t => t.UserId == UserId);
+            var userres = await userquery.ToListAsync();
+            if (userres.Count > 0)
+            {
+                user = userres.Find(t => t.UserId == UserId);
+
+                //IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.UserId == UserId);
+                //var contactsres = await contactquery.ToListAsync();
+                //foreach (ShadowUserContact contact in contactsres)
+                //{
+                //    user.addEmergencyContact(contact);
+                //}
+                return true;
+                
+            }
+            //if none exists, create a new object
+            else
+            {
+                user = new ShadowUser();
+                user.UserId = UserId;
+                await SaveTaskAsync(user);
+                return true;
             }
         }
 
@@ -124,6 +144,11 @@ namespace Shadow
             return await Authenticate(MobileServiceAuthenticationProvider.Facebook);
         }
 
+        //public static async Task<ShadowUser> AuthenticateUser(string email, string password)
+        //{
+        //    var loginResult = await 
+        //}
+
         public static ShadowUser CurrentUser
         {
             get
@@ -152,7 +177,7 @@ namespace Shadow
                 {
                     if (contact.Id == null)
                     {
-                        await ShadowUserContactTable.InsertAsync(contact);
+                        ShadowUserContactTable.InsertAsync(contact);
                     }
                     else
                     {
@@ -167,7 +192,7 @@ namespace Shadow
 
                     }
                 }
-                await ShadowUserTable.UpdateAsync(CurrentUser);
+                ShadowUserTable.UpdateAsync(CurrentUser);
             }
 
         }
@@ -229,11 +254,20 @@ namespace Shadow
 
         public static event EventHandler onSMSFailed;
 
+        public static event ErrorEventHandler onAuthenticationFailed;
+
         private static void RaiseOnAuthenticated()
         {
             var handler = onAuthenticated;
             if (handler != null)
                 handler(typeof(ShadowService), EventArgs.Empty);
+        }
+
+        private static void RaiseOnAuthenticationFailed(AccountResult result)
+        {
+            var handler = onAuthenticationFailed;
+            if (handler != null)
+                handler(typeof(ShadowService), new ErrorEventArgs(result));
         }
 
         private static void RaiseOnSMSDelivered(string phoneno)
@@ -275,7 +309,23 @@ namespace Shadow
             //return true;
         }
 
-        public static async Task<AccountResult> RegisterAccount(string email, string password)
+        public static async Task<ShadowUser> RegisterAccount(string email, string password)
+        {
+            isAuthenticated = false;
+            AccountResult result = await registerAccount(email, password);
+            if (result == AccountResult.accountCreated)
+            {
+                isAuthenticated = true;
+                RaiseOnAuthenticated();
+            }
+            else
+            {
+                RaiseOnAuthenticationFailed(result);
+            }
+            return user;
+        }
+
+        public static async Task<AccountResult> registerAccount(string email, string password)
         {
             var queryParams = new NameValueCollection()
             {
@@ -304,15 +354,15 @@ namespace Shadow
                         return (AccountResult)errorcode;
                     } else
                     {
+                        string userid = response["UserId"];
+                        var res = await LoadUser(userid);
                         return AccountResult.accountCreated;
                     }
-                         
                 }
             }
             catch (OperationCanceledException) { }
-
+            catch (Exception) { }
             return AccountResult.error;
-
         }
 
         public static string ToQueryString(string url, NameValueCollection nvc)

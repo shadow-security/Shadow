@@ -11,6 +11,7 @@ namespace Shadow
         loginSuccess,
         loginInvalidPassword,
         loginInvalidUser,
+        socialLoginFailed
     }
 
     public static class Constants

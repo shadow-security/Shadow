@@ -15,7 +15,11 @@ namespace Shadow
         string medicalproviderphoneno;
         string securityprovider;
         string securityproviderphoneno;
+        string email;
         List<ShadowUserContact> emergencycontacts = new List<ShadowUserContact>();
+        private string username;
+        private string salt;
+        private string status;
 
         public string Id { get; set; }
         
@@ -80,6 +84,34 @@ namespace Shadow
         {
             get { return securityproviderphoneno; }
             set { securityproviderphoneno = value; }
+        }
+
+        [JsonProperty(PropertyName = "email")]
+        public string Email
+        {
+            get { return email; }
+            set { email = value; }
+        }
+
+        [JsonProperty(PropertyName = "username")]
+        public string userName
+        {
+            get { return username; }
+            set { username = value; }
+        }
+
+        [JsonProperty(PropertyName = "salt")]
+        public string Salt
+        {
+            get { return salt; }
+            set { salt = value; }
+        }
+
+        [JsonProperty(PropertyName = "status")]
+        public string Status
+        {
+            get { return status; }
+            set { status = value; }
         }
 
         public List<ShadowUserContact> EmergencyContacts

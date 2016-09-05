@@ -8,6 +8,7 @@ using Android.Widget;
 using Android.OS;
 using Shadow;
 using System.Threading.Tasks;
+using Shadow.Model;
 
 namespace Shadow.Droid
 {
@@ -19,19 +20,23 @@ namespace Shadow.Droid
             base.OnCreate(bundle);
 
             global::Xamarin.Forms.Forms.Init(this, bundle);
+
             LoadApplication(new Shadow.App());
 
-            ShadowService.AuthenticateFacebook();
+            ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123");
+            //ShadowService.AuthenticateFacebook();
+            ShadowService.onAuthenticationFailed += loginFailed;
             ShadowService.onAuthenticated += loginHandler;
             
-            //var task = Task.Run(async () => { await ShadowService.AuthenticateFacebook(); });
+            
+            //var task = Task.Run(async () => { await ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123"); });
             //task.Wait();
 
         }
 
         public void loginHandler(object sender, EventArgs args)
         {
-            ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123");
+
             ShadowService.CurrentUser.lastName = "Bloemhof";
             ShadowUserContact contact = new ShadowUserContact();
             contact.firstName = "Jan";
@@ -39,11 +44,19 @@ namespace Shadow.Droid
             contact.phoneNo = "0828213175";
             ShadowService.CurrentUser.addEmergencyContact(contact);
             ShadowService.Addlog(0, "added contact", "user contact");
-            ShadowService.SaveCurrentUser();
+            ShadowService.SaveCurrentUser().Wait();
+
+            ShadowService.sendSMS("+27828213175", "Hello from SHADOW").Wait();
+
+            //ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123");
             //ShadowService.sendSMS("+27828213175", "Hello from SHADOW").Wait();
-            
+
         }
 
+        public void loginFailed(object sender, ErrorEventArgs args)
+        {
+            ShadowService.sendSMS("+27828213175", "Login failed").Wait();
+        }
     }
 }
 
