@@ -11,6 +11,8 @@ using System.Linq;
 using Microsoft.WindowsAzure.MobileServices.Sync;
 using UIKit;
 using Shadow.Model;
+using System.Net;
+using Newtonsoft.Json;
 
 namespace Shadow
 {
@@ -51,8 +53,13 @@ namespace Shadow
             ShadowUserContactTable = Client.GetTable<ShadowUserContact>();
             ShadowAuditTable = Client.GetTable<Audit>();
 #endif
-            client = new HttpClient();
+
+            HttpClientHandler hch = new HttpClientHandler();
+            hch.Proxy = null;
+            hch.UseProxy = false;
+            client = new HttpClient(hch);
             client.MaxResponseContentBufferSize = 256000;
+
         }
 
         private static async Task<ShadowUser> Authenticate(MobileServiceAuthenticationProvider provider)
@@ -98,12 +105,12 @@ namespace Shadow
             {
                 user = userres.Find(t => t.UserId == UserId);
 
-                //IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.UserId == UserId);
-                //var contactsres = await contactquery.ToListAsync();
-                //foreach (ShadowUserContact contact in contactsres)
-                //{
-                //    user.addEmergencyContact(contact);
-                //}
+                IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.UserId == UserId);
+                var contactsres = await contactquery.ToListAsync();
+                foreach (ShadowUserContact contact in contactsres)
+                {
+                    user.addEmergencyContact(contact);
+                }
                 return true;
                 
             }
@@ -144,10 +151,57 @@ namespace Shadow
             return await Authenticate(MobileServiceAuthenticationProvider.Facebook);
         }
 
-        //public static async Task<ShadowUser> AuthenticateUser(string email, string password)
-        //{
-        //    var loginResult = await 
-        //}
+        public static async Task<ShadowUser> AuthenticateUser(string email, string password)
+        {
+            var queryParams = new NameValueCollection()
+            {
+                { "emailOrUserName", email },
+                { "password", password }
+            };
+            AccountResult resultCode = AccountResult.error;
+            var url = ToQueryString(Constants.LoginURL, queryParams);
+
+            try
+            {
+
+                var httpResponseMessage = await client.GetAsync(url).ConfigureAwait(continueOnCapturedContext: false);
+                if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK ||
+                    httpResponseMessage.StatusCode == System.Net.HttpStatusCode.Created)
+                {
+                    var responseContent = await httpResponseMessage.Content.ReadAsStringAsync();
+                    responseContent = responseContent.Replace("\"", string.Empty);
+                    responseContent = responseContent.Replace("{", string.Empty);
+                    responseContent = responseContent.Replace("}", string.Empty);
+                    Dictionary<string, string> response = responseContent.Split(',')
+                                .Select(x => x.Split(':'))
+                                .ToDictionary(x => x[0], x => x[1]);
+                    if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        int errorcode = Int32.Parse(response["code"]);
+                        resultCode = (AccountResult)errorcode;
+                        RaiseOnAuthenticationFailed(resultCode);
+                        return null;
+                    }
+                    else
+                    {
+                        string userid = response["UserId"];
+                        var res = await LoadUser(userid);
+                        resultCode = AccountResult.loginSuccess;
+                        isAuthenticated = true;
+                        RaiseOnAuthenticated();
+                    }
+                }
+            }
+            catch (OperationCanceledException) {
+                RaiseOnAuthenticationFailed(resultCode);
+                return null;
+            }
+            catch (Exception ex) {
+                RaiseOnAuthenticationFailed(resultCode);
+                return null;
+            }
+            return user;
+        }
 
         public static ShadowUser CurrentUser
         {
@@ -177,7 +231,7 @@ namespace Shadow
                 {
                     if (contact.Id == null)
                     {
-                        ShadowUserContactTable.InsertAsync(contact);
+                        await ShadowUserContactTable.InsertAsync(contact);
                     }
                     else
                     {
@@ -192,7 +246,7 @@ namespace Shadow
 
                     }
                 }
-                ShadowUserTable.UpdateAsync(CurrentUser);
+                await ShadowUserTable.UpdateAsync(CurrentUser);
             }
 
         }

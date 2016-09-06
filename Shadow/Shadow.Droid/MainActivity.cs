@@ -23,8 +23,9 @@ namespace Shadow.Droid
 
             LoadApplication(new Shadow.App());
 
-            ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123");
+            //ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword1232");
             //ShadowService.AuthenticateFacebook();
+            ShadowService.AuthenticateUser("marius@bloemhofs.co.za", "MyPassword123");
             ShadowService.onAuthenticationFailed += loginFailed;
             ShadowService.onAuthenticated += loginHandler;
             
@@ -46,7 +47,7 @@ namespace Shadow.Droid
             ShadowService.Addlog(0, "added contact", "user contact");
             ShadowService.SaveCurrentUser().Wait();
 
-            ShadowService.sendSMS("+27828213175", "Hello from SHADOW").Wait();
+            ShadowService.sendSMS("+27828213175", "Login successfull").Wait();
 
             //ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123");
             //ShadowService.sendSMS("+27828213175", "Hello from SHADOW").Wait();
@@ -55,7 +56,7 @@ namespace Shadow.Droid
 
         public void loginFailed(object sender, ErrorEventArgs args)
         {
-            ShadowService.sendSMS("+27828213175", "Login failed").Wait();
+            //ShadowService.sendSMS("+27828213175", "Login failed: " + args.Result.ToString()).Wait();
         }
     }
 }
