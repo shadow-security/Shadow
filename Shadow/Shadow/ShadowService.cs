@@ -304,11 +304,11 @@ namespace Shadow
         /*Event handlers*/
         public static event EventHandler onAuthenticated;
 
+        public static event ErrorEventHandler onAuthenticationFailed;
+
         public static event EventHandler onSMSDelivered;
 
         public static event EventHandler onSMSFailed;
-
-        public static event ErrorEventHandler onAuthenticationFailed;
 
         private static void RaiseOnAuthenticated()
         {
@@ -379,7 +379,7 @@ namespace Shadow
             return user;
         }
 
-        public static async Task<AccountResult> registerAccount(string email, string password)
+        private static async Task<AccountResult> registerAccount(string email, string password)
         {
             var queryParams = new NameValueCollection()
             {

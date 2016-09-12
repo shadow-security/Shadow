@@ -23,11 +23,13 @@ namespace Shadow.Droid
 
             LoadApplication(new Shadow.App());
 
-            //ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword1232");
-            //ShadowService.AuthenticateFacebook();
-            ShadowService.AuthenticateUser("marius@bloemhofs.co.za", "MyPassword123");
             ShadowService.onAuthenticationFailed += loginFailed;
             ShadowService.onAuthenticated += loginHandler;
+
+            //ShadowService.RegisterAccount("erhard1010@gmail.com", "Password123");
+
+            //ShadowService.AuthenticateFacebook();
+            ShadowService.AuthenticateUser("erhard1010@gmail.com", "Password123");
             
             
             //var task = Task.Run(async () => { await ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123"); });
@@ -56,7 +58,13 @@ namespace Shadow.Droid
 
         public void loginFailed(object sender, ErrorEventArgs args)
         {
-            //ShadowService.sendSMS("+27828213175", "Login failed: " + args.Result.ToString()).Wait();
+            try
+            {
+                ShadowService.sendSMS("+27828213175", "Login failed: " + args.Result.ToString()).Wait();
+            }
+            catch (Exception ex)
+            {
+            }
         }
     }
 }
