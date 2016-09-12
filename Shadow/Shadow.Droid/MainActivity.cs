@@ -23,18 +23,20 @@ namespace Shadow.Droid
 
             LoadApplication(new Shadow.App());
 
+            //ShadowService.AuthenticateFacebook();
+
             ShadowService.onAuthenticationFailed += loginFailed;
             ShadowService.onAuthenticated += loginHandler;
 
-            //ShadowService.RegisterAccount("erhard1010@gmail.com", "Password123");
-
-            //ShadowService.AuthenticateFacebook();
-            ShadowService.AuthenticateUser("erhard1010@gmail.com", "Password123");
-            
-            
-            //var task = Task.Run(async () => { await ShadowService.RegisterAccount("marius@bloemhofs.co.za", "MyPassword123"); });
+            //{ 1 } Register new accoont
+            //ShadowService.RegisterAccount("erhard10101@gmail.com", "Password123"); //this will work
+            //ShadowService.RegisterAccount("erhard1010@gmail.com", "Password123"); //this will fail, user exist
+            //{ 2 } Authenticate user
+            //ShadowService.AuthenticateUser("erhard1010@gmail.com", "Password123"); //this will work, password correct
+            //ShadowService.AuthenticateUser("erhard1010@gmail.com", "Password1234"); //this will fail, password incorrect           
+            //{ 3 } Authenticate user
+            //var task = Task.Run(async () => { await ShadowService.AuthenticateUser("erhard1010@gmail.com", "Password123"); });
             //task.Wait();
-
         }
 
         public void loginHandler(object sender, EventArgs args)
