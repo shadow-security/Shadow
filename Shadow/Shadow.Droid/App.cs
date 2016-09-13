@@ -5,16 +5,13 @@ using System.Text;
 using Microsoft.WindowsAzure.MobileServices;
 using Xamarin.Forms;
 
-namespace Shadow
+namespace Shadow.Droid
 {
 	public class App : Application
 	{
 		public App ()
 		{
-            MainPage = new MyPage();
-            {
-
-            };
+			MainPage = new MyPage();          
 		}
 
         

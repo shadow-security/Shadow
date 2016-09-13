@@ -110,6 +110,7 @@ namespace Shadow
                 foreach (ShadowUserContact contact in contactsres)
                 {
                     user.addEmergencyContact(contact);
+                    contact.Changed = false;
                 }
                 return true;
                 
@@ -241,9 +242,11 @@ namespace Shadow
                         }
                         else
                         {
-                            await ShadowUserContactTable.UpdateAsync(contact);
+                            if (contact.Changed)
+                            {
+                                await ShadowUserContactTable.UpdateAsync(contact);
+                            }
                         }
-
                     }
                 }
                 await ShadowUserTable.UpdateAsync(CurrentUser);

@@ -25,8 +25,8 @@ namespace Shadow.Droid
 
             //ShadowService.AuthenticateFacebook();
 
-            ShadowService.onAuthenticationFailed += loginFailed;
-            ShadowService.onAuthenticated += loginHandler;
+            //ShadowService.onAuthenticationFailed += loginFailed;
+            //ShadowService.onAuthenticated += loginHandler;
 
             //{ 1 } Register new accoont
             //ShadowService.RegisterAccount("erhard10101@gmail.com", "Password123"); //this will work
