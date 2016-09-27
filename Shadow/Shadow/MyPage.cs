@@ -13,6 +13,11 @@ namespace Shadow
             var Username = new Entry { Placeholder = "Username" };
             var Password = new Entry { Placeholder = "Password" };
 
+            Button btnResetPassword = new Button
+            {
+                Text = "Reset password"
+            };
+
             Button btnReg = new Button
 			{
 				Text = "Register"
@@ -43,6 +48,11 @@ namespace Shadow
                 LoginFaceBook();
             };
 
+            btnResetPassword.Clicked += (sender, e) =>
+            {
+                ResetPassword(Username.Text);
+            };
+
             Content = new StackLayout
 			{
 				Children = {
@@ -51,7 +61,8 @@ namespace Shadow
                     Password,
                     btnReg,
                     btnLogin,
-                    btnLoginFaceBook
+                    btnLoginFaceBook,
+                    btnResetPassword
                 }
 			};
 
@@ -125,6 +136,20 @@ namespace Shadow
                     //ShadowService.SaveCurrentUser();
                     await DisplayAlert("Success", "Logged in with Facebook", "OK");
                 }
+
+            }
+            catch (MobileServiceInvalidOperationException ex)
+            {
+                await DisplayAlert("Error", ex.Message, "OK");
+            }
+        }
+
+        private async void ResetPassword(String username)
+        {
+            try
+            {
+                var response = await ShadowService.ResetPassword(username);
+                await DisplayAlert("Success", response, "OK");
 
             }
             catch (MobileServiceInvalidOperationException ex)

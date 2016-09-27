@@ -374,6 +374,18 @@ namespace Shadow
             return user;
         }
 
+        public static async Task<String> ResetPassword(string emailAddress)
+        {
+            // Call the CustomLogin API and set the returned MobileServiceUser as the current user.
+            var response = await Client
+                .InvokeApiAsync<ResetRequest, String>(
+                "ForgotPassword", new ResetRequest()
+                {
+                    email = emailAddress
+                });
+            return response;
+        }
+
     }
 
 }

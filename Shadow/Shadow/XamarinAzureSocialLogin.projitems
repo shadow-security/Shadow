@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Model\RegistrationResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\Audit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\Contact.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\ResetRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\SocialLoginRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\UserContacts.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyPage.cs" />
