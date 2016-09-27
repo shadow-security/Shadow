@@ -11,10 +11,17 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)App.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MessageHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Account.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\ErrorEventArgs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Model\ShadowAudit.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Model\ShadowUser.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Model\ShadowUserContact.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\LoginRequest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\RegistrationRequest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\RegistrationResponse.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Audit.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Contact.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\SocialLoginRequest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\UserContacts.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RouteSMS.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ShadowService.cs" />
   </ItemGroup>

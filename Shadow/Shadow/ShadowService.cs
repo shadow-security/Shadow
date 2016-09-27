@@ -13,6 +13,8 @@ using UIKit;
 using Shadow.Model;
 using System.Net;
 using Newtonsoft.Json;
+using System.Threading;
+using Newtonsoft.Json.Linq;
 
 namespace Shadow
 {
@@ -20,24 +22,27 @@ namespace Shadow
     {
         public delegate void ErrorEventHandler(object sender, ErrorEventArgs e);
 
-        private static ShadowUser user;
+        private static Account account;
         private static Boolean isAuthenticated;
-        private static readonly MobileServiceClient Client = new MobileServiceClient(Constants.ApplicationURL);
-        private static HttpClient client;
+        private static MobileServiceClient Client;
 
 
 #if OFFLINE_SYNC_ENABLED
-        private static IMobileServiceSyncTable<ShadowUser> ShadowUserTable;
-        private static IMobileServiceSyncTable<ShadowUserContact> ShadowUserContactTable;
-        private static IMobileServiceSyncTable<Audit> ShadowAuditTable;
+        private static IMobileServiceSyncTable<Account> AccountTable;
+        private static IMobileServiceSyncTable<Contact> ContactsTable;
+        private static IMobileServiceSyncTable<Audit> AuditTable;
 #else
-        private static IMobileServiceTable<ShadowUser> ShadowUserTable;
-        private static IMobileServiceTable<ShadowUserContact> ShadowUserContactTable;
-        private static IMobileServiceTable<Audit> ShadowAuditTable;
+        private static IMobileServiceTable<Account> AccountTable;
+        private static IMobileServiceTable<Audit> AuditTable;
+        private static IMobileServiceTable<Contact> ContactsTable;
 #endif
 
         static ShadowService()
         {
+
+        
+            Client = new MobileServiceClient(Constants.ApplicationURL);
+
 #if OFFLINE_SYNC_ENABLED
             var store = new MobileServiceSQLiteStore("localstore.db");
             store.DefineTable<ShadowUser>();
@@ -45,172 +50,133 @@ namespace Shadow
             //Initializes the SyncContext using the default IMobileServiceSyncHandler.
             Client.SyncContext.InitializeAsync(store);
 
-            ShadowUserTable = Client.GetSyncTable<ShadowUser>();
-            ShadowUserContactTable = Client.GetSyncTable<ShadowUserContact>();
-            ShadowAuditTable = Client.GetSyncTable<Audit>();
+            AccountTable = Client.GetSyncTable<Account>();
+            ContactsTable = Client.GetSyncTable<Contact>();
+            AuditTable = Client.GetSyncTable<Audit>();
 #else
-            ShadowUserTable = Client.GetTable<ShadowUser>();
-            ShadowUserContactTable = Client.GetTable<ShadowUserContact>();
-            ShadowAuditTable = Client.GetTable<Audit>();
+            AccountTable = Client.GetTable<Account>();
+            ContactsTable = Client.GetTable<Contact>();
+            AuditTable = Client.GetTable<Audit>();
 #endif
-
-            HttpClientHandler hch = new HttpClientHandler();
-            hch.Proxy = null;
-            hch.UseProxy = false;
-            client = new HttpClient(hch);
-            client.MaxResponseContentBufferSize = 256000;
 
         }
 
-        private static async Task<ShadowUser> Authenticate(MobileServiceAuthenticationProvider provider)
+        private static async Task<Account> Authenticate(MobileServiceAuthenticationProvider provider)
         {
             try
             {
-                MobileServiceUser authUser;
                 isAuthenticated = false;
 #if __IOS__
-                authUser = await Client.LoginAsync(UIKit.UIApplication.SharedApplication.KeyWindow.RootViewController, provider);
+                var user = await Client.LoginAsync(UIKit.UIApplication.SharedApplication.KeyWindow.RootViewController, provider);
 #elif WINDOWS_PHONE
-                authUser = return await Client.LoginAsync(provider);
+                var user = await Client.CurrentUser = await Client.LoginAsync(provider);
 #else
-                authUser = await Client.LoginAsync(
-                    Xamarin.Forms.Forms.Context,
-                    provider);
+                var user = await Client.LoginAsync(Xamarin.Forms.Forms.Context, provider);
 #endif
-                isAuthenticated = (authUser.UserId != String.Empty);
-                //if user is authenticated, fetch the corresponding user object
+                IMobileServiceTable<Account> table = Client.GetTable<Account>();
+                Client.CurrentUser = null;
+                Client.CurrentUser = await AuthenticateSocialAsync(user.UserId, user.MobileServiceAuthenticationToken);
 
-                if (isAuthenticated == false)
+                isAuthenticated = true;
+                IMobileServiceTableQuery<Account> userquery = table.Where(t => t.socialid == user.UserId);
+                var userres = await userquery.ToListAsync();
+                if (userres.Count > 0)
                 {
-                    RaiseOnAuthenticationFailed(AccountResult.socialLoginFailed);
-                    return null;
+                    var _account = userres.Find(t => t.socialid == user.UserId);
+                    account = _account;
+                    var res = await LoadContacts(account);
+                    return _account;
                 }
-
-                var res = await LoadUser(authUser.UserId);
-                RaiseOnAuthenticated();
-                return user;
+                throw new Exception(String.Format("User logged in but no account found for sociaId: {0}", user.UserId));
             }
-            catch (Exception ex)
+            catch (MobileServiceInvalidOperationException ex)
             {
-                RaiseOnAuthenticationFailed(AccountResult.socialLoginFailed);
-                return null;
+                throw ex;
             }
         }
 
-        private static async Task<Boolean> LoadUser(string UserId)
+        private static async Task<Boolean> LoadContacts(Account account)
         {
-            IMobileServiceTableQuery<ShadowUser> userquery = ShadowUserTable.Where(t => t.UserId == UserId);
-            var userres = await userquery.ToListAsync();
-            if (userres.Count > 0)
+            IMobileServiceTableQuery<Contact> contactquery = ContactsTable.Where(t => t.userId == account.Id);
+            var contactsres = await contactquery.ToListAsync();
+            foreach (Contact contact in contactsres)
             {
-                user = userres.Find(t => t.UserId == UserId);
-
-                IMobileServiceTableQuery<ShadowUserContact> contactquery = ShadowUserContactTable.Where(t => t.UserId == UserId);
-                var contactsres = await contactquery.ToListAsync();
-                foreach (ShadowUserContact contact in contactsres)
-                {
-                    user.addEmergencyContact(contact);
-                    contact.Changed = false;
-                }
-                return true;
-                
+                account.addEmergencyContact(contact);
+                contact.Changed = false;
             }
-            //if none exists, create a new object
-            else
-            {
-                user = new ShadowUser();
-                user.UserId = UserId;
-                await SaveTaskAsync(user);
-                return true;
-            }
+            return true;
         }
 
-        private static async Task SaveTaskAsync(ShadowUser item)
+        private static async Task SaveTaskAsync(Account item)
         {
             if (item.Id == null)
             {
-                await ShadowUserTable.InsertAsync(item);
+                await AccountTable.InsertAsync(item);
             }
             else
             {
-                await ShadowUserTable.UpdateAsync(item);
+                await AccountTable.UpdateAsync(item);
+            }
+            foreach (Contact contact in item.ContactList)
+            {
+                if (contact.Id == null)
+                {
+                    await ContactsTable.InsertAsync(contact);
+                }
+                else
+                {
+                    await ContactsTable.UpdateAsync(contact);
+                }
             }
         }
 
-        public static async Task<ShadowUser> AuthenticateGoogle()
+        public static async Task<Account> AuthenticateGoogle()
         {
             return await Authenticate(MobileServiceAuthenticationProvider.Google);
         }
 
-        public static async Task<ShadowUser> AuthenticateTwitter()
+        public static async Task<Account> AuthenticateTwitter()
         {
-            return await Authenticate(MobileServiceAuthenticationProvider.Twitter);
+           return await Authenticate(MobileServiceAuthenticationProvider.Twitter);
         }
 
-        public static async Task<ShadowUser> AuthenticateFacebook()
+        public static async Task<Account> AuthenticateFacebook()
         {
             return await Authenticate(MobileServiceAuthenticationProvider.Facebook);
         }
 
-        public static async Task<ShadowUser> AuthenticateUser(string email, string password)
+        public static async Task<Account> AuthenticateUser(string email, string password)
         {
-            var queryParams = new NameValueCollection()
-            {
-                { "emailOrUserName", email },
-                { "password", password }
-            };
-            AccountResult resultCode = AccountResult.error;
-            var url = ToQueryString(Constants.LoginURL, queryParams);
-
             try
             {
-
-                var httpResponseMessage = await client.GetAsync(url).ConfigureAwait(continueOnCapturedContext: false);
-                if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK ||
-                    httpResponseMessage.StatusCode == System.Net.HttpStatusCode.Created)
+                isAuthenticated = false;
+                account = null;
+                Client.CurrentUser = await AuthenticateAsync(email, password);
+                IMobileServiceTableQuery<Account> userquery = AccountTable.Where(t => t.email == email);
+                var userres = await userquery.ToListAsync();
+                if (userres.Count > 0)
                 {
-                    var responseContent = await httpResponseMessage.Content.ReadAsStringAsync();
-                    responseContent = responseContent.Replace("\"", string.Empty);
-                    responseContent = responseContent.Replace("{", string.Empty);
-                    responseContent = responseContent.Replace("}", string.Empty);
-                    Dictionary<string, string> response = responseContent.Split(',')
-                                .Select(x => x.Split(':'))
-                                .ToDictionary(x => x[0], x => x[1]);
-                    if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK)
-                    {
-                        int errorcode = Int32.Parse(response["code"]);
-                        resultCode = (AccountResult)errorcode;
-                        RaiseOnAuthenticationFailed(resultCode);
-                        return null;
-                    }
-                    else
-                    {
-                        string userid = response["UserId"];
-                        var res = await LoadUser(userid);
-                        resultCode = AccountResult.loginSuccess;
-                        isAuthenticated = true;
-                        RaiseOnAuthenticated();
-                    }
+                    var _account = userres.Find(t => t.email == email);
+                    account = _account;
+                    var res = await LoadContacts(account);
+                    isAuthenticated = true;
+                    return _account;
                 }
             }
-            catch (OperationCanceledException) {
-                RaiseOnAuthenticationFailed(resultCode);
-                return null;
+            catch (MobileServiceInvalidOperationException ex)
+            {
+                throw ex;
             }
-            catch (Exception ex) {
-                RaiseOnAuthenticationFailed(resultCode);
-                return null;
-            }
-            return user;
+            return null;
         }
 
-        public static ShadowUser CurrentUser
+        public static Account CurrentUser
         {
             get
             {
                 if (isAuthenticated)
                 {
-                    return user;
+                    return account;
                 }
                 else
                 {
@@ -222,36 +188,36 @@ namespace Shadow
 
         public static async Task SaveCurrentUser()
         {
+            await AccountTable.UpdateAsync(CurrentUser);
             if (CurrentUser.Id == null)
             {
-                await ShadowUserTable.InsertAsync(CurrentUser);
+                await AccountTable.InsertAsync(CurrentUser);
             }
             else
             {
-                foreach (ShadowUserContact contact in CurrentUser.EmergencyContacts)
+                foreach (Contact contact in CurrentUser.ContactList)
                 {
                     if (contact.Id == null)
                     {
-                        await ShadowUserContactTable.InsertAsync(contact);
+                        await ContactsTable.InsertAsync(contact);
                     }
                     else
                     {
                         if (contact.deleted)
                         {
-                            await ShadowUserContactTable.DeleteAsync(contact);
+                            await ContactsTable.DeleteAsync(contact);
                         }
                         else
                         {
                             if (contact.Changed)
                             {
-                                await ShadowUserContactTable.UpdateAsync(contact);
+                                await ContactsTable.UpdateAsync(contact);
                             }
                         }
                     }
                 }
-                await ShadowUserTable.UpdateAsync(CurrentUser);
+                await AccountTable.UpdateAsync(CurrentUser);
             }
-
         }
 
         public static async Task<Boolean> sendSMS(string phoneno, string message)
@@ -292,9 +258,9 @@ namespace Shadow
             logentry.eventDescription = eventdescription;
             logentry.eventType = eventtype;
             logentry.timeStamp = DateTime.Now.ToUniversalTime();
-            logentry.UserId = user.UserId;
+            logentry.UserId = account.Id;
 
-            await ShadowAuditTable.InsertAsync(logentry);
+            await AuditTable.InsertAsync(logentry);
         }
 
 #if OFFLINE_SYNC_ENABLED
@@ -305,27 +271,9 @@ namespace Shadow
 #endif        
 
         /*Event handlers*/
-        public static event EventHandler onAuthenticated;
-
-        public static event ErrorEventHandler onAuthenticationFailed;
-
         public static event EventHandler onSMSDelivered;
 
         public static event EventHandler onSMSFailed;
-
-        private static void RaiseOnAuthenticated()
-        {
-            var handler = onAuthenticated;
-            if (handler != null)
-                handler(typeof(ShadowService), EventArgs.Empty);
-        }
-
-        private static void RaiseOnAuthenticationFailed(AccountResult result)
-        {
-            var handler = onAuthenticationFailed;
-            if (handler != null)
-                handler(typeof(ShadowService), new ErrorEventArgs(result));
-        }
 
         private static void RaiseOnSMSDelivered(string phoneno)
         {
@@ -366,91 +314,65 @@ namespace Shadow
             //return true;
         }
 
-        public static async Task<ShadowUser> RegisterAccount(string email, string password)
+        public static async Task<Account> RegisterAccount(string email, string password)
         {
-            isAuthenticated = false;
-            AccountResult result = await registerAccount(email, password);
-            if (result == AccountResult.accountCreated)
+            try
             {
-                isAuthenticated = true;
-                RaiseOnAuthenticated();
+                isAuthenticated = false;
+                account = null;
+                RegistrationResponse response = await RegisterAsync(email, password);
+                if (response.email == email)
+                {
+                    return await AuthenticateUser(email, password);
+                }
             }
-            else
+            catch (MobileServiceInvalidOperationException ex)
             {
-                RaiseOnAuthenticationFailed(result);
+                throw ex;
             }
+            return null;
+        }
+
+        private static async Task<MobileServiceUser> AuthenticateAsync(string username, string password)
+        {
+            // Call the CustomLogin API and set the returned MobileServiceUser as the current user.
+            var user = await Client
+                .InvokeApiAsync<LoginRequest, MobileServiceUser>(
+                "CustomLogin", new LoginRequest()
+                {
+                    email = username,
+                    password = password
+                });
+
             return user;
         }
 
-        private static async Task<AccountResult> registerAccount(string email, string password)
+        private static async Task<MobileServiceUser> AuthenticateSocialAsync(string userid, string token)
         {
-            var queryParams = new NameValueCollection()
-            {
-                { "email", email },
-                { "password", password }
-            };
-
-            var url = ToQueryString(Constants.RegisterURL, queryParams);
-
-            try
-            {
-                var httpResponseMessage = await client.GetAsync(url).ConfigureAwait(continueOnCapturedContext: false);
-                if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK ||
-                    httpResponseMessage.StatusCode == System.Net.HttpStatusCode.Created)
+            // Call the CustomLogin API and set the returned MobileServiceUser as the current user.
+            var user = await Client
+                .InvokeApiAsync<SocialLoginRequest, MobileServiceUser>(
+                "CustomSocialReset", new SocialLoginRequest()
                 {
-                    var responseContent = await httpResponseMessage.Content.ReadAsStringAsync();
-                    responseContent = responseContent.Replace("\"", string.Empty);
-                    responseContent = responseContent.Replace("{", string.Empty);
-                    responseContent = responseContent.Replace("}", string.Empty);
-                    Dictionary<string, string> response = responseContent.Split(',')
-                                .Select(x => x.Split(':'))
-                                .ToDictionary(x => x[0], x => x[1]);
-                    if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK)
-                    {
-                        int errorcode = Int32.Parse(response["code"]);
-                        return (AccountResult)errorcode;
-                    } else
-                    {
-                        string userid = response["UserId"];
-                        var res = await LoadUser(userid);
-                        return AccountResult.accountCreated;
-                    }
-                }
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception) { }
-            return AccountResult.error;
+                    SocialId = userid,
+                    token = token
+                });
+
+            return user;
         }
 
-        public static string ToQueryString(string url, NameValueCollection nvc)
+        private static async Task<RegistrationResponse> RegisterAsync(string username, string password)
         {
-            StringBuilder sb;
-
-            if (url.Contains("?"))
-                sb = new StringBuilder("&");
-            else
-                sb = new StringBuilder("?");
-
-            bool first = true;
-
-            foreach (string key in nvc.AllKeys)
-            {
-                foreach (string value in nvc.GetValues(key))
+            // Call the CustomLogin API and set the returned MobileServiceUser as the current user.
+            var user = await Client
+                .InvokeApiAsync<RegistrationRequest, RegistrationResponse>(
+                "CustomRegistration", new RegistrationRequest()
                 {
-                    if (!first)
-                    {
-                        sb.Append("&");
-                    }
-
-                    sb.AppendFormat("{0}={1}", Uri.EscapeDataString(key), Uri.EscapeDataString(value));
-
-                    first = false;
-                }
-            }
-
-            return url + sb.ToString();
+                    email = username,
+                    password = password
+                });
+            return user;
         }
-
 
     }
 

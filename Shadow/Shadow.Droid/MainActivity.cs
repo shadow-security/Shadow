@@ -43,7 +43,7 @@ namespace Shadow.Droid
         {
 
             ShadowService.CurrentUser.lastName = "Bloemhof";
-            ShadowUserContact contact = new ShadowUserContact();
+            Contact contact = new Contact();
             contact.firstName = "Jan";
             contact.lastName = "Botha";
             contact.phoneNo = "0828213175";
