@@ -11,7 +11,7 @@ namespace Shadow
 		public MyPage()
 		{
             var Username = new Entry { Placeholder = "Username" };
-            var Password = new Entry { Placeholder = "Username" };
+            var Password = new Entry { Placeholder = "Password" };
 
             Button btnReg = new Button
 			{
