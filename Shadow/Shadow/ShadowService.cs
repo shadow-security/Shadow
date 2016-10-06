@@ -15,6 +15,7 @@ using System.Net;
 using Newtonsoft.Json;
 using System.Threading;
 using Newtonsoft.Json.Linq;
+using Xamarin.Forms;
 
 namespace Shadow
 {
@@ -145,6 +146,17 @@ namespace Shadow
             return await Authenticate(MobileServiceAuthenticationProvider.Facebook);
         }
 
+        public static void SaveLoggedinUser()
+        {
+            if (isAuthenticated && (CurrentUser != null))
+            {
+                Application.Current.Properties.Clear();
+                Application.Current.Properties.Add("UserId", Client.CurrentUser.UserId);
+                Application.Current.Properties.Add("token", Client.CurrentUser.MobileServiceAuthenticationToken);
+                Application.Current.Properties.Add("Id", CurrentUser.Id);
+            }
+        }
+
         public static async Task<Account> AuthenticateUser(string email, string password)
         {
             try
@@ -165,6 +177,50 @@ namespace Shadow
             }
             catch (MobileServiceInvalidOperationException ex)
             {
+                throw ex;
+            }
+            return null;
+        }
+
+        public static async Task<Account> GetLoggedinUser()
+        {
+            try
+            {
+                if (account != null)
+                {
+                    return account;
+                }
+                if (Application.Current.Properties.ContainsKey("UserId"))
+                {
+                    var userid = Application.Current.Properties["UserId"] as string;
+                    var token = Application.Current.Properties["token"] as string;
+                    var Id = Application.Current.Properties["Id"] as string;
+
+                    if (Client.CurrentUser == null)
+                    {
+                        Client.CurrentUser = new MobileServiceUser(userid);
+                        Client.CurrentUser.MobileServiceAuthenticationToken = token;
+                        
+                        IMobileServiceTableQuery<Account> userquery = AccountTable.Where(t => t.Id == Id);
+                        var userres = await userquery.ToListAsync();
+                        if (userres.Count > 0)
+                        {
+                            var _account = userres.Find(t => t.Id == Id);
+                            account = _account;
+                            var res = await LoadContacts(account);
+                            isAuthenticated = true;
+                            return _account;
+                        }
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (MobileServiceInvalidOperationException ex)
+            {
+                Logout();
                 throw ex;
             }
             return null;
@@ -386,6 +442,14 @@ namespace Shadow
             return response;
         }
 
+        public static void Logout()
+        {
+            // Call the CustomLogin API and set the returned MobileServiceUser as the current user.
+            Application.Current.Properties.Clear();
+            Client.CurrentUser = null;
+            account = null;
+            isAuthenticated = false;
+        }
     }
 
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.WindowsAzure.MobileServices;
 using Xamarin.Forms;
+using Shadow.Model;
 
 namespace Shadow
 {
@@ -15,23 +16,29 @@ namespace Shadow
             {
 
             };
-		}
 
-        
 
-		protected override void OnStart ()
+        }
+
+
+
+        protected async override void OnStart ()
 		{
-			// Handle when your app starts
-		}
+            // Handle when your app starts
+            Account account = await ShadowService.GetLoggedinUser();
+        }
 
 		protected override void OnSleep ()
 		{
-			// Handle when your app sleeps
-		}
+            // Handle when your app sleeps
+            ShadowService.SaveLoggedinUser();
 
-		protected override void OnResume ()
+        }
+
+		protected async override void OnResume ()
 		{
-			// Handle when your app resumes
-		}
+            // Handle when your app resumes
+            Account account = await ShadowService.GetLoggedinUser();
+        }
 	}
 }
