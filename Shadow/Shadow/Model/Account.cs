@@ -47,6 +47,14 @@ namespace Shadow.Model
         [JsonProperty(PropertyName = "Status")]
         public string status { get; set; }
 
+        [JsonProperty(PropertyName = "Lat")]
+        public double Lat { get; set; }
+
+        [JsonProperty(PropertyName = "Long")]
+        public double Long { get; set; }
+
+        [JsonProperty(PropertyName = "Address")]
+        public string Address { get; set; }
         public List<Contact> ContactList
         {
             get { return emergencycontacts; }

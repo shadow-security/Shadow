@@ -38,6 +38,16 @@ namespace Shadow
                 Text = "Login with FaceBook"
             };
 
+            Button btnLoginTwitter = new Button
+            {
+                Text = "Login with Twitter"
+            };
+
+            Button btnLoginLogOut = new Button
+            {
+                Text = "Log Out"
+            };
+
             btnLogin.Clicked += (sender, e) =>
 			{
                 Login(Username.Text, Password.Text);
@@ -48,10 +58,21 @@ namespace Shadow
                 LoginFaceBook();
             };
 
+            btnLoginTwitter.Clicked += (sender, e) =>
+            {
+                LoginTwitter();
+            };
+
             btnResetPassword.Clicked += (sender, e) =>
             {
                 ResetPassword(Username.Text);
             };
+
+            btnLoginLogOut.Clicked += (sender, e) =>
+            {
+                ShadowService.Logout();
+            };
+
 
             Content = new StackLayout
 			{
@@ -62,7 +83,9 @@ namespace Shadow
                     btnReg,
                     btnLogin,
                     btnLoginFaceBook,
-                    btnResetPassword
+                    btnLoginTwitter,
+                    btnResetPassword,
+                    btnLoginLogOut
                 }
 			};
 
@@ -119,6 +142,32 @@ namespace Shadow
             }
         }
 
+        private async void LoginTwitter()
+        {
+            try
+            {
+                Account account = await ShadowService.AuthenticateTwitter();
+                if (account != null)
+                {
+                    ShadowService.CurrentUser.lastName = "Bloemhof2";
+                    ShadowService.CurrentUser.Lat = 41.2564654;
+                    //Contact contact = new Contact();
+                    //contact.firstName = "Jan";
+                    //contact.lastName = "Botha";
+                    //contact.phoneNo = "0828213175";
+                    //ShadowService.CurrentUser.addEmergencyContact(contact);
+                    //ShadowService.Addlog(0, "added contact", "user contact");
+                    //ShadowService.SaveCurrentUser();
+                    await DisplayAlert("Success", "Logged in with Twitter", "OK");
+                }
+
+            }
+            catch (MobileServiceInvalidOperationException ex)
+            {
+                await DisplayAlert("Error", ex.Message, "OK");
+            }
+        }
+        
         private async void LoginFaceBook()
         {
             try
