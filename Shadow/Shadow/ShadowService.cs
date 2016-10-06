@@ -86,6 +86,7 @@ namespace Shadow
                     var _account = userres.Find(t => t.socialid == user.UserId);
                     account = _account;
                     var res = await LoadContacts(account);
+                    SaveLoggedinUser();
                     return _account;
                 }
                 throw new Exception(String.Format("User logged in but no account found for sociaId: {0}", user.UserId));
@@ -172,6 +173,7 @@ namespace Shadow
                     account = _account;
                     var res = await LoadContacts(account);
                     isAuthenticated = true;
+                    SaveLoggedinUser();
                     return _account;
                 }
             }
