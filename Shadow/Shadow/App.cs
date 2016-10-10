@@ -20,12 +20,11 @@ namespace Shadow
 
         }
 
-
-
         protected async override void OnStart ()
 		{
             // Handle when your app starts
             Account account = await ShadowService.GetLoggedinUser();
+            
         }
 
 		protected override void OnSleep ()
@@ -38,7 +37,7 @@ namespace Shadow
 		protected async override void OnResume ()
 		{
             // Handle when your app resumes
-            Account account = await ShadowService.GetLoggedinUser();
+            
         }
 	}
 }

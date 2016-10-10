@@ -6,10 +6,12 @@ using Xamarin.Forms;
 
 namespace Shadow
 {
-	public class MyPage : ContentPage
-	{
-		public MyPage()
-		{
+    public class MyPage : ContentPage
+    {
+        public MyPage()
+        {
+            ShadowService.OnSavedUserLoaded += OnLogin;
+
             var Username = new Entry { Placeholder = "Username" };
             var Password = new Entry { Placeholder = "Password" };
 
@@ -19,9 +21,9 @@ namespace Shadow
             };
 
             Button btnReg = new Button
-			{
-				Text = "Register"
-			};
+            {
+                Text = "Register"
+            };
 
             btnReg.Clicked += (sender, e) =>
             {
@@ -33,7 +35,7 @@ namespace Shadow
                 Text = "Login"
             };
 
-            Button btnLoginFaceBook= new Button
+            Button btnLoginFaceBook = new Button
             {
                 Text = "Login with FaceBook"
             };
@@ -49,9 +51,9 @@ namespace Shadow
             };
 
             btnLogin.Clicked += (sender, e) =>
-			{
+            {
                 Login(Username.Text, Password.Text);
-			};
+            };
 
             btnLoginFaceBook.Clicked += (sender, e) =>
             {
@@ -75,9 +77,9 @@ namespace Shadow
 
 
             Content = new StackLayout
-			{
-				Children = {
-					new Label { Text = "Hello ContentPage" },
+            {
+                Children = {
+                    new Label { Text = "Hello ContentPage" },
                     Username,
                     Password,
                     btnReg,
@@ -87,13 +89,13 @@ namespace Shadow
                     btnResetPassword,
                     btnLoginLogOut
                 }
-			};
+            };
 
 
-		}
+        }
 
-		private async void Register(String username, String password)
-		{
+        private async void Register(String username, String password)
+        {
             try
             {
                 Account account = await ShadowService.RegisterAccount(username, password);
@@ -107,7 +109,6 @@ namespace Shadow
                     //ShadowService.CurrentUser.addEmergencyContact(contact);
                     await ShadowService.Addlog(0, "added contact", "user contact");
                     //await ShadowService.SaveCurrentUser();
-                    await DisplayAlert("Success", "Registered new account: "+ username, "OK");
                 }
 
             }
@@ -167,7 +168,7 @@ namespace Shadow
                 await DisplayAlert("Error", ex.Message, "OK");
             }
         }
-        
+
         private async void LoginFaceBook()
         {
             try
@@ -192,19 +193,30 @@ namespace Shadow
                 await DisplayAlert("Error", ex.Message, "OK");
             }
         }
-
         private async void ResetPassword(String username)
         {
             try
             {
-                var response = await ShadowService.ResetPassword(username);
-                await DisplayAlert("Success", response, "OK");
+                if (ShadowService.CurrentUser.socialid != null)
+                {
+                    var response = await ShadowService.ResetPassword(username);
+                    await DisplayAlert("Success", response, "OK");
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Social login, no need to reset", "OK");
+                }
 
             }
             catch (MobileServiceInvalidOperationException ex)
             {
                 await DisplayAlert("Error", ex.Message, "OK");
             }
+        }
+
+        private void OnLogin(object sender, EventArgs e)
+        {
+            DisplayAlert("Account retrieved", ShadowService.CurrentUser.Id, "OK");
         }
     }
 }

@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using Xamarin.Forms;
+using Microsoft.WindowsAzure.MobileServices.SQLiteStore;
 
 namespace Shadow
 {
@@ -46,7 +47,9 @@ namespace Shadow
 
 #if OFFLINE_SYNC_ENABLED
             var store = new MobileServiceSQLiteStore("localstore.db");
-            store.DefineTable<ShadowUser>();
+            store.DefineTable<Account>();
+            store.DefineTable<Contact>();
+            store.DefineTable<Audit>();
 
             //Initializes the SyncContext using the default IMobileServiceSyncHandler.
             Client.SyncContext.InitializeAsync(store);
@@ -155,6 +158,9 @@ namespace Shadow
                 Application.Current.Properties.Add("UserId", Client.CurrentUser.UserId);
                 Application.Current.Properties.Add("token", Client.CurrentUser.MobileServiceAuthenticationToken);
                 Application.Current.Properties.Add("Id", CurrentUser.Id);
+#if __IOS__
+                Application.Current.SavePropertiesAsync();
+#endif
             }
         }
 
@@ -202,18 +208,19 @@ namespace Shadow
                     {
                         Client.CurrentUser = new MobileServiceUser(userid);
                         Client.CurrentUser.MobileServiceAuthenticationToken = token;
-                        
-                        IMobileServiceTableQuery<Account> userquery = AccountTable.Where(t => t.Id == Id);
-                        var userres = await userquery.ToListAsync();
-                        if (userres.Count > 0)
-                        {
-                            var _account = userres.Find(t => t.Id == Id);
-                            account = _account;
-                            var res = await LoadContacts(account);
-                            isAuthenticated = true;
-                            return _account;
-                        }
                     }
+                    IMobileServiceTableQuery<Account> userquery = AccountTable.Where(t => t.Id == Id);
+                    var userres = await userquery.ToListAsync();
+                    if (userres.Count > 0)
+                    {
+                        var _account = userres.Find(t => t.Id == Id);
+                        account = _account;
+                        var res = await LoadContacts(account);
+                        isAuthenticated = true;
+                        RaiseOnSavedUserLoaded(account);
+                        return _account;
+                    }
+                   
                 }
                 else
                 {
@@ -326,12 +333,14 @@ namespace Shadow
         {
             await Client.SyncContext.PushAsync();
         }
-#endif        
+#endif
 
         /*Event handlers*/
         public static event EventHandler onSMSDelivered;
 
         public static event EventHandler onSMSFailed;
+
+        public static event EventHandler OnSavedUserLoaded;
 
         private static void RaiseOnSMSDelivered(string phoneno)
         {
@@ -343,6 +352,13 @@ namespace Shadow
         private static void RaiseonSMSFailed(string phoneno)
         {
             var handler = onSMSFailed;
+            if (handler != null)
+                handler(typeof(ShadowService), EventArgs.Empty);
+        }
+
+        private static void RaiseOnSavedUserLoaded(Account account)
+        {
+            var handler = OnSavedUserLoaded;
             if (handler != null)
                 handler(typeof(ShadowService), EventArgs.Empty);
         }
