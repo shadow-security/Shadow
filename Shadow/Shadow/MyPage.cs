@@ -10,7 +10,7 @@ namespace Shadow
     {
         public MyPage()
         {
-            ShadowService.OnSavedUserLoaded += OnLogin;
+            //ShadowService.OnSavedUserLoaded += OnLogin;
 
             var Username = new Entry { Placeholder = "Username" };
             var Password = new Entry { Placeholder = "Password" };

@@ -27,8 +27,7 @@ namespace Shadow.iOS
             global::Xamarin.Forms.Forms.Init();
             Microsoft.WindowsAzure.MobileServices.CurrentPlatform.Init();
             LoadApplication(new Shadow.App());
-            Microsoft.WindowsAzure.MobileServices.CurrentPlatform.Init();
-
+            
             return base.FinishedLaunching(app, options);
             
         }
