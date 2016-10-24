@@ -10,7 +10,7 @@ namespace Shadow
     {
         public MyPage()
         {
-            //ShadowService.OnSavedUserLoaded += OnLogin;
+            ShadowService.OnSavedUserLoaded += OnLogin;
 
             var Username = new Entry { Placeholder = "Username" };
             var Password = new Entry { Placeholder = "Password" };
@@ -35,16 +35,6 @@ namespace Shadow
                 Text = "Login"
             };
 
-            Button btnLoginFaceBook = new Button
-            {
-                Text = "Login with FaceBook"
-            };
-
-            Button btnLoginTwitter = new Button
-            {
-                Text = "Login with Twitter"
-            };
-
             Button btnLoginLogOut = new Button
             {
                 Text = "Log Out"
@@ -53,16 +43,6 @@ namespace Shadow
             btnLogin.Clicked += (sender, e) =>
             {
                 Login(Username.Text, Password.Text);
-            };
-
-            btnLoginFaceBook.Clicked += (sender, e) =>
-            {
-                LoginFaceBook();
-            };
-
-            btnLoginTwitter.Clicked += (sender, e) =>
-            {
-                LoginTwitter();
             };
 
             btnResetPassword.Clicked += (sender, e) =>
@@ -84,8 +64,6 @@ namespace Shadow
                     Password,
                     btnReg,
                     btnLogin,
-                    btnLoginFaceBook,
-                    btnLoginTwitter,
                     btnResetPassword,
                     btnLoginLogOut
                 }
@@ -197,7 +175,7 @@ namespace Shadow
         {
             try
             {
-                if (ShadowService.CurrentUser.socialid != null)
+                if (ShadowService.CurrentUser.socialid == null)
                 {
                     var response = await ShadowService.ResetPassword(username);
                     await DisplayAlert("Success", response, "OK");

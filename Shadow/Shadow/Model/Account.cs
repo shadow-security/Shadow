@@ -26,6 +26,9 @@ namespace Shadow.Model
         [JsonProperty(PropertyName = "IdNo")]
         public string idNo { get; set; }
 
+        [JsonProperty(PropertyName = "DateOfBirth")]
+        public DateTime DateOfBirth { get; set; }
+
         [JsonProperty(PropertyName = "MedicalProvider")]
         public string medicalProvider { get; set; }
 
@@ -55,6 +58,9 @@ namespace Shadow.Model
 
         [JsonProperty(PropertyName = "Address")]
         public string Address { get; set; }
+
+        [JsonProperty(PropertyName = "ShadowDeviceID")]
+        public string ShadowDeviceID { get; set; }
         public List<Contact> ContactList
         {
             get { return emergencycontacts; }
