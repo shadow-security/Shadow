@@ -281,7 +281,6 @@ namespace Shadow
                         }
                     }
                 }
-                await AccountTable.UpdateAsync(CurrentUser);
             }
         }
 
@@ -363,7 +362,7 @@ namespace Shadow
                 handler(typeof(ShadowService), EventArgs.Empty);
         }
 
-        public static async Task<Boolean> SendSms(string phoneno, string smsMessage)
+        private static async Task<Boolean> SendSms(string phoneno, string smsMessage)
         {
             //method 1 - RouteSMS
             return RouteSMS.SendSMS(phoneno, smsMessage);

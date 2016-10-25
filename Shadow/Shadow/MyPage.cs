@@ -80,13 +80,15 @@ namespace Shadow
                 if (account != null)
                 {
                     ShadowService.CurrentUser.lastName = "Bloemhof2";
-                    //Contact contact = new Contact();
-                    //contact.firstName = "Jan";
-                    //contact.lastName = "Botha";
-                    //contact.phoneNo = "0828213175";
-                    //ShadowService.CurrentUser.addEmergencyContact(contact);
+                    account.firstName = "Marius";
+                    Contact contact = new Contact();
+                    contact.firstName = "Jan";
+                    contact.lastName = "Botha";
+                    contact.phoneNo = "0828213175";
+                    ShadowService.CurrentUser.addEmergencyContact(contact);
                     await ShadowService.Addlog(0, "added contact", "user contact");
-                    //await ShadowService.SaveCurrentUser();
+                    await ShadowService.SaveCurrentUser();
+                    //await ShadowService.sendSMS("0828213175", "TEST");
                 }
 
             }
