@@ -1,8 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Android.Telephony;
+using Foundation;
+using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
-using System.Text;
+using Xamarin.Forms;
 
 namespace Shadow
 {
@@ -29,8 +31,14 @@ namespace Shadow
 
         }
 
-        public static Boolean SendSMS(string phoneno, string smsMessage)
+        public static Boolean SendSMS(string phoneno, string countryCode, string smsMessage)
         {
+            string countryCD = CultureInfo.CurrentUICulture.Name;
+            int index = countryCD.IndexOf('-');
+            countryCD = countryCD.Remove(0, index + 1);
+
+            phoneno = PhoneNumberUtils.FormatNumberToE164(phoneno, countryCD);
+
             System.Uri.EscapeUriString(smsMessage);
             string response = "";
             string URL = "http://" + server + ":" + port + "/bulksms/bulksms?username=" + username + "&password="

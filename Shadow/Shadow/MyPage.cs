@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.MobileServices;
+﻿using Android.Telephony;
+using Microsoft.WindowsAzure.MobileServices;
 using Shadow.Model;
 using System;
 
@@ -79,8 +80,17 @@ namespace Shadow
                 Account account = await ShadowService.RegisterAccount(username, password);
                 if (account != null)
                 {
+                    ShadowService.CurrentUser.firstName = "Marius";
                     ShadowService.CurrentUser.lastName = "Bloemhof2";
-                    account.firstName = "Marius";
+                    ShadowService.CurrentUser.Address = "asdf jkashdlfkjahsdlkf jahsldkf haslkdjf halskjdh falksjdh falksjdh flkaj hs1231234123l4khj ";
+                    ShadowService.CurrentUser.DateOfBirth = DateTime.Parse("1998/01/01");
+                    ShadowService.CurrentUser.Lat = 123135464.22;
+                    ShadowService.CurrentUser.Long = 123135464.22;
+                    ShadowService.CurrentUser.medicalProvider = "sdfa sdf asdf asdf";
+                    ShadowService.CurrentUser.medicalproviderPhoneno= "0123416546";
+                    ShadowService.CurrentUser.securityProvider = "sdfa sdf asdf asdf";
+                    ShadowService.CurrentUser.securityproviderPhoneno = "0123416546";
+                    
                     Contact contact = new Contact();
                     contact.firstName = "Jan";
                     contact.lastName = "Botha";
@@ -88,7 +98,7 @@ namespace Shadow
                     ShadowService.CurrentUser.addEmergencyContact(contact);
                     await ShadowService.Addlog(0, "added contact", "user contact");
                     await ShadowService.SaveCurrentUser();
-                    //await ShadowService.sendSMS("0828213175", "TEST");
+                    await ShadowService.sendSMS("0828213175", "TEST");
                 }
 
             }

@@ -23,8 +23,10 @@ namespace Shadow
         protected async override void OnStart ()
 		{
             // Handle when your app starts
-            Account account = await ShadowService.GetLoggedinUser();
-            
+            Account account = await ShadowService.GetLoggedinUser(); ;
+            await ShadowService.sendSMS("0828213175", "aasdasdsad");
+
+
         }
 
 		protected override void OnSleep ()

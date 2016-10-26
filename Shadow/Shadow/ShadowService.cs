@@ -27,6 +27,7 @@ namespace Shadow
         private static Account account;
         private static Boolean isAuthenticated;
         private static MobileServiceClient Client;
+        private static string countryCode;
 
 
 #if OFFLINE_SYNC_ENABLED
@@ -365,7 +366,7 @@ namespace Shadow
         private static async Task<Boolean> SendSms(string phoneno, string smsMessage)
         {
             //method 1 - RouteSMS
-            return RouteSMS.SendSMS(phoneno, smsMessage);
+            return RouteSMS.SendSMS(phoneno, countryCode,  smsMessage);
 
             //method 2 - Twilio
             //var accountSid = "ACffd7aeddc478c222a68b1ac151662c7b"; // Your Account SID from twilio.com/console
@@ -467,6 +468,10 @@ namespace Shadow
             account = null;
             isAuthenticated = false;
         }
+
+        public static void CountryCode(string countrycode)
+        {
+            countryCode = countrycode;        }
     }
 
 }

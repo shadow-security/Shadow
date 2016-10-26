@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using Microsoft.WindowsAzure.MobileServices;
 using Xamarin.Forms;
+using Android.Telephony;
+using Android.Content;
 
 namespace Shadow.Droid
 {
@@ -11,7 +13,7 @@ namespace Shadow.Droid
 	{
 		public App ()
 		{
-			MainPage = new MyPage();          
+            MainPage = new MyPage();          
 		}
 
         
