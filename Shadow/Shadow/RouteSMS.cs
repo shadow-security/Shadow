@@ -1,10 +1,8 @@
-﻿using Android.Telephony;
-using Foundation;
+﻿using com.google.i18n.phonenumbers;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Net;
-using Xamarin.Forms;
 
 namespace Shadow
 {
@@ -25,6 +23,8 @@ namespace Shadow
         private static int DLR = 0;
         private static string from = "Shadow";
 
+        private static PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
+
 
         static RouteSMS()
         {
@@ -33,11 +33,14 @@ namespace Shadow
 
         public static Boolean SendSMS(string phoneno, string countryCode, string smsMessage)
         {
+
+
             string countryCD = CultureInfo.CurrentUICulture.Name;
             int index = countryCD.IndexOf('-');
             countryCD = countryCD.Remove(0, index + 1);
-
-            phoneno = PhoneNumberUtils.FormatNumberToE164(phoneno, countryCD);
+            
+            var numberProto = phoneUtil.parse(phoneno, countryCD);
+            phoneno = phoneUtil.format(numberProto, PhoneNumberUtil.PhoneNumberFormat.E164);
 
             System.Uri.EscapeUriString(smsMessage);
             string response = "";

@@ -317,15 +317,18 @@ namespace Shadow
 
         public static async Task Addlog(int eventstatus, string eventdescription, string eventtype)
         {
-            Audit logentry = new Audit();
+            if (isAuthenticated == true)
+            {
+                Audit logentry = new Audit();
 
-            logentry.eventStatus = eventstatus;
-            logentry.eventDescription = eventdescription;
-            logentry.eventType = eventtype;
-            logentry.timeStamp = DateTime.Now.ToUniversalTime();
-            logentry.UserId = account.Id;
+                logentry.eventStatus = eventstatus;
+                logentry.eventDescription = eventdescription;
+                logentry.eventType = eventtype;
+                logentry.timeStamp = DateTime.Now.ToUniversalTime();
+                logentry.UserId = account.Id;
 
-            await AuditTable.InsertAsync(logentry);
+                await AuditTable.InsertAsync(logentry);
+            }
         }
 
 #if OFFLINE_SYNC_ENABLED

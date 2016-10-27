@@ -56,6 +56,10 @@
       <HintPath>..\..\packages\Xamarin.Forms.1.3.5.6335\lib\MonoAndroid10\FormsViewGroup.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="libphonenumber, Version=5.8.606.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Google.LibPhoneNumber.1.0.0\lib\libphonenumber.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.WindowsAzure.Mobile, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.Azure.Mobile.Client.2.0.1\lib\monoandroid\Microsoft.WindowsAzure.Mobile.dll</HintPath>
       <Private>True</Private>
